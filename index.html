@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0f1e">
+<title>Gym Plan</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/favicon.ico">
+<meta name="mobile-web-app-capable" content="yes">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:#0a0f1e;color:#e8eaf0;min-height:100vh;overflow-x:hidden}
+
+/* ── DAY TABS ── */
+.tabs{display:flex;background:#111827;border-bottom:1px solid #1f2a3d;position:sticky;top:0;z-index:50}
+.tab{flex:1;padding:11px 2px 8px;text-align:center;cursor:pointer;border-bottom:3px solid transparent;transition:all .2s}
+.tab-label{font-size:11px;font-weight:700;letter-spacing:.5px;color:#4b5680;display:block}
+.tab-sub{font-size:9px;color:#2d3a55;display:block;margin-top:1px;line-height:1}
+.tab.active .tab-label{color:#60a5fa}
+.tab.active{border-bottom-color:#60a5fa}
+.tab.active .tab-sub{color:#3b82f6}
+.swim-pip{display:inline-block;width:5px;height:5px;background:#38bdf8;border-radius:50%;margin-left:3px;vertical-align:middle}
+
+/* ── DAY HEADER ── */
+.day-head{padding:16px 16px 0}
+.day-title{font-size:24px;font-weight:800;letter-spacing:-.5px;color:#f1f5f9}
+.day-sub{font-size:13px;color:#64748b;margin-top:3px;font-weight:500}
+.tag-pill{display:inline-flex;align-items:center;margin:10px 16px 0;background:#1e3a5f;color:#93c5fd;font-size:11px;font-weight:700;letter-spacing:.3px;padding:5px 10px;border-radius:20px}
+.swim-pill{display:flex;align-items:center;gap:6px;margin:6px 16px 0;background:#0c2d3f;color:#38bdf8;font-size:11px;font-weight:700;padding:5px 10px;border-radius:20px;width:fit-content}
+.timing{margin:10px 16px 0;font-size:11px;color:#4b5680;font-style:italic;line-height:1.5}
+
+/* ── CLUSTERS ── */
+.clusters{padding:12px 12px 0}
+.cluster{border-radius:12px;overflow:hidden;margin-bottom:14px}
+.c-head{padding:11px 14px}
+.c-name{font-size:14px;font-weight:800;color:#fff;letter-spacing:.2px}
+.c-note{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.c-cols{display:grid;grid-template-columns:30px 1fr 78px 22px;gap:6px;padding:5px 12px;background:#111827;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#2d3a55}
+
+/* ── EXERCISE ROWS ── */
+.ex{display:grid;grid-template-columns:30px 1fr 78px 22px;gap:6px;padding:12px 12px;background:#111827;border-top:1px solid #0a0f1e;cursor:pointer;align-items:center;transition:background .15s}
+.ex:active,.ex.open{background:#162035}
+.ex-label{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff;flex-shrink:0}
+.ex-name{font-size:14px;font-weight:600;color:#e2e8f0;line-height:1.3}
+.ex-sets{font-size:11px;color:#64748b;font-weight:500}
+.chevron{color:#2d3a55;font-size:16px;text-align:center;transition:transform .2s;line-height:1}
+.ex.open .chevron{color:#60a5fa;transform:rotate(90deg)}
+
+/* ── EXERCISE DETAIL ── */
+.ex-detail{background:#0e1624;border-top:1px solid #0a0f1e;overflow:hidden;max-height:0;transition:max-height .3s ease}
+.ex-detail.open{max-height:500px}
+.ex-detail-inner{padding:14px 14px 12px}
+.coaching{font-size:13px;color:#94a3b8;line-height:1.65;margin-bottom:14px}
+
+/* Weight inputs */
+.weight-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.w-field label{display:block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#3b4d6a;margin-bottom:4px}
+.w-field input{width:100%;background:#111827;border:1px solid #1f2a3d;border-radius:8px;padding:9px 10px;color:#e2e8f0;font-size:15px;-webkit-appearance:none;transition:border-color .2s}
+.w-field input:focus{outline:none;border-color:#3b82f6;background:#162035}
+.w-field input::placeholder{color:#2d3a55}
+
+/* Action buttons */
+.ex-btns{display:flex;gap:8px}
+.btn-guide{flex:1;background:#1e3a5f;color:#93c5fd;border:none;border-radius:9px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:.2px}
+.btn-guide:active{background:#2a4f7a}
+.btn-timer{background:#0f2a1a;color:#4ade80;border:none;border-radius:9px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-timer:active{background:#1a3d28}
+
+/* ── GUIDE OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-end}
+.overlay.show{display:flex}
+.drawer{background:#111827;border-radius:20px 20px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:20px 16px 48px;position:relative}
+.drawer-handle{width:36px;height:4px;background:#1f2a3d;border-radius:2px;margin:0 auto 16px}
+.drawer-title{font-size:18px;font-weight:800;color:#f1f5f9;margin-bottom:18px;letter-spacing:-.3px}
+.g-section{margin-bottom:14px}
+.g-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#3b4d6a;margin-bottom:5px}
+.g-text{font-size:14px;color:#94a3b8;line-height:1.65}
+.g-step{font-size:14px;color:#94a3b8;line-height:1.55;margin-bottom:5px;padding-left:20px;position:relative}
+.g-step::before{content:attr(data-n)'.';position:absolute;left:0;color:#3b82f6;font-weight:700}
+.g-key{background:#0c2540;border-left:3px solid #3b82f6;padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px;color:#93c5fd;font-style:italic;line-height:1.55}
+.g-warn{background:#1f1200;border-left:3px solid #f59e0b;padding:10px 12px;border-radius:0 8px 8px 0;font-size:13px;color:#fde68a;line-height:1.55}
+.btn-close{position:absolute;top:16px;right:16px;width:32px;height:32px;background:#1f2a3d;border:none;border-radius:50%;color:#64748b;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+
+/* ── TIMER ── */
+.timer-ov{position:fixed;inset:0;background:rgba(5,10,25,.93);z-index:300;display:none;flex-direction:column;align-items:center;justify-content:center}
+.timer-ov.show{display:flex}
+.timer-num{font-size:88px;font-weight:900;letter-spacing:-4px;font-variant-numeric:tabular-nums;line-height:1}
+.timer-lbl{font-size:15px;color:#4b5680;margin-top:6px;margin-bottom:40px;letter-spacing:.5px}
+.timer-btns{display:flex;gap:12px}
+.btn-t{border:none;border-radius:12px;padding:13px 24px;font-size:15px;font-weight:700;cursor:pointer}
+.btn-t-skip{background:#1f2a3d;color:#64748b}
+.btn-t-60{background:#162035;color:#60a5fa}
+.btn-t-90{background:#162035;color:#60a5fa}
+.timer-preset{display:flex;gap:10px;margin-bottom:20px}
+.timer-p{background:#111827;border:1px solid #1f2a3d;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;color:#4b5680;cursor:pointer}
+.timer-p.sel{background:#1e3a5f;color:#93c5fd;border-color:#3b82f6}
+
+/* ── PULL UP PROGRESS ── */
+.progress-bar-wrap{margin:0 12px 14px;background:#111827;border-radius:12px;overflow:hidden;border:1px solid #1f2a3d}
+.progress-head{padding:10px 14px;background:#1a2035;display:flex;justify-content:space-between;align-items:center}
+.progress-title{font-size:12px;font-weight:700;color:#93c5fd;letter-spacing:.3px}
+.progress-sub{font-size:10px;color:#3b4d6a}
+.progress-row{display:grid;grid-template-columns:1fr 70px 80px;gap:6px;padding:8px 14px;border-top:1px solid #0a0f1e;align-items:center}
+.p-name{font-size:12px;color:#94a3b8;font-weight:500}
+.p-where{font-size:10px;color:#3b4d6a}
+.p-status{font-size:10px;font-weight:700;text-align:right}
+.status-current{color:#60a5fa}
+.status-next{color:#f59e0b}
+.status-goal{color:#4ade80}
+
+.bottom-pad{height:30px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#1f2a3d;border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="tabs" id="tabs"></div>
+<div id="main"></div>
+
+<div class="overlay" id="guideOverlay">
+  <div class="drawer" id="guideDrawer">
+    <div class="drawer-handle"></div>
+    <button class="btn-close" onclick="closeGuide()">×</button>
+    <div id="guideContent"></div>
+  </div>
+</div>
+
+<div class="timer-ov" id="timerOv">
+  <div class="timer-num" id="timerNum">90</div>
+  <div class="timer-lbl">REST</div>
+  <div class="timer-preset">
+    <div class="timer-p" onclick="setPreset(60)">60s</div>
+    <div class="timer-p sel" onclick="setPreset(90)">90s</div>
+  </div>
+  <div class="timer-btns">
+    <button class="btn-t btn-t-skip" onclick="closeTimer()">Skip</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// PLAN DATA
+// ═══════════════════════════════════════════════
+const COLORS = ['#1B4F72','#1A5E3A','#7D6608'];
+
+const PLAN = [
+{
+  title:'Day 1 — Push', sub:'Chest · Shoulders · Triceps',
+  tag:'Strength + Eccentric Control', swim:true,
+  timing:'Warm-up 5min · C1 ~9min · Setup 1–2min · C2 ~9min · Setup 1min · C3 ~10min · Total ~37min',
+  clusters:[
+    { name:'Cluster 1 — Chest Strength', note:'BB loaded for bench. DBs light for lateral raises.',
+      exercises:[
+        { l:'A', name:'Barbell Bench Press', sets:'3 × 6–8',
+          coaching:'3-second eccentric — lower slowly, drive hard. Bar to nipple line, elbows at 60–70° from torso.',
+          guide:{ setup:'Lie flat on bench, eyes under bar. Grip slightly wider than shoulders. Feet flat on floor. Shoulder blades together and down.',
+            steps:['Unrack. Bar above lower chest, not neck.','Lower 3 seconds. Bar to nipple line. Elbows at 60–70°.','Drive hard off chest to start.','Lock out. Reset.'],
+            key:'The 3-second lower is more important than the press. Don\'t bounce the bar off the chest.',
+            warn:'Elbows flaring to 90° — keep them at 60–70° to protect the shoulder joint.' }},
+        { l:'B', name:'Dumbbell Lateral Raises', sets:'3 × 12',
+          coaching:'Raise directly out to the SIDES — T-shape, not forwards. Palms face down at top, thumbs slightly lower than pinkies. Shoulder height only.',
+          guide:{ setup:'Stand upright, DBs at sides, palms inward. Slight elbow bend throughout.',
+            steps:['Raise arms directly sideways — T-shape.','Lead with elbows. Thumbs slightly lower than pinkies at top.','Raise to shoulder height only — no higher.','Lower with control 2–3 seconds.'],
+            key:'Direction is everything: sideways, not forwards. If you\'re using momentum, the weight is too heavy.',
+            warn:'Shrugging the traps as you raise — keep shoulders down and away from the ears.' }},
+        { l:'C', name:'Tricep Dips (bench)', sets:'3 × 12',
+          coaching:'Hands on bench edge, feet flat, legs roughly straight. 3-second lower to 90°. Keep back close to the bench.',
+          guide:{ setup:'Sit on bench edge, hands beside hips, fingers forward. Shuffle forward so hips clear the bench.',
+            steps:['Lower with 3-second count, hips straight down close to bench.','Lower until elbows reach 90° — no deeper.','Drive through palms back to start.','Keep back close to the bench throughout.'],
+            key:'This is a tricep exercise. If your chest is working hard, you\'ve drifted too far forward.',
+            warn:'Locking elbows out aggressively at top — keep a slight bend to maintain tension.' }},
+      ]},
+    { name:'Cluster 2 — Upper Chest & Shoulders', note:'Bench to 30–35°. DBs set for shoulder press.',
+      exercises:[
+        { l:'A', name:'Incline Barbell Press', sets:'3 × 8',
+          coaching:'Set bench to 30–35°. Below 30° = too similar to flat. Above 45° = shifts to front delt. 3-second eccentric.',
+          guide:{ setup:'Bench at 30–35°. Grip slightly wider than shoulder-width.',
+            steps:['Unrack. Bar above upper chest.','Lower 3 seconds to upper chest. Elbows 60–70°.','Drive upward and slightly back — slight arc, not straight up.','Lock out. Repeat.'],
+            key:'The 30–35° angle targets the upper chest. Keep the 3-second lower regardless of fatigue.',
+            warn:'Bench too steep (45°+) — at that angle you\'re pressing with front deltoids, not upper chest.' }},
+        { l:'B', name:'Dumbbell Shoulder Press', sets:'3 × 10',
+          coaching:'SEATED recommended until movement is solid (more stable, better isolation). Progress to standing for more core demand. Full press overhead, 2-second lower.',
+          guide:{ setup:'Seated: back supported, DBs at shoulder height, palms forward, elbows at 90°. Standing: feet shoulder-width, core braced hard.',
+            steps:['Press both DBs directly overhead until arms fully extended.','DBs nearly touch at top — don\'t let them drift wide.','Lower with control — 2-second descent to shoulder height.','Keep wrists stacked over elbows.'],
+            key:'Seated isolates the shoulder. Standing adds core demand. Start seated, progress to standing when solid.',
+            warn:'Arching the lower back to get the weight overhead — brace the core harder or reduce load.' }},
+        { l:'C', name:'Wide Press-Ups (burn-out)', sets:'3 × max',
+          coaching:'Burn-out = reps to failure. No fixed target — stop when form breaks down. Expect fewer reps at session end.',
+          guide:{ setup:'Hands wider than shoulder-width, fingers slightly outward. Body in straight plank from head to heels.',
+            steps:['Lower 3 seconds — chest to within an inch of the floor.','Full range every rep.','Drive back to full arm extension.','Continue until form breaks down — that\'s the set.'],
+            key:'Burn-out means reps to failure. Fewer good reps beats more partial reps. Sag in hips = stop.',
+            warn:'Shortening the range to get more reps — full range is the entire point.' }},
+      ]},
+    { name:'Cluster 3 — Conditioning Finisher', note:'No kit changes. Bag + DBs + bodyweight only.',
+      exercises:[
+        { l:'A', name:'Punch Bag', sets:'3 × 2 min',
+          coaching:'Rd 1: jab-cross, full shoulder extension. Rd 2: hooks and body shots, drive from hips. Rd 3: freestyle movement and combinations. 45s rest between rounds.',
+          guide:{ setup:'Hands up, elbows in, chin down. Balls of your feet. Stay loose between strikes.',
+            steps:['Round 1: jab-cross. Full shoulder extension and rotation on every punch. Move around the bag.','Round 2: hooks and body shots. Power comes from hip rotation — not the arm.','Round 3: freestyle. Movement, level changes, mixed combinations.','45 seconds rest between rounds — stay moving.'],
+            key:'Shoulder endurance work. Full extension on every punch. Sloppy-but-moving beats tense-and-static.',
+            warn:'Tense shoulders between strikes — stay relaxed, tighten only at the point of contact.' }},
+        { l:'B', name:'DB Chest Flyes (incline)', sets:'3 × 12',
+          coaching:'Active recovery from bag. Slight elbow bend throughout — do not change it. Wide arc, feel the chest stretch. Stop when elbows are level with the bench.',
+          guide:{ setup:'Bench at 30–35°. DBs above chest, palms facing each other. Slight elbow bend — maintain throughout.',
+            steps:['Lower DBs in wide arc, leading with elbows.','Stop when elbows level with bench — no lower.','Squeeze chest and bring DBs back in same arc.','This is a FLY not a press — elbows stay bent.'],
+            key:'Feel the stretch at the bottom. Can\'t feel the chest? Weight is too heavy.',
+            warn:'Straightening the elbows — this turns it into a press and removes the chest stretch.' }},
+        { l:'C', name:'Press-Ups (burn-out)', sets:'3 × max',
+          coaching:'Between bag rounds. Same as Cluster 2 — reps to failure. Full range. 3-second lower.',
+          guide:{ setup:'Standard press-up position. Core tight, body in a straight line.',
+            steps:['3-second lower to floor.','Chest within an inch of the floor.','Drive to full extension.','Continue to failure.'],
+            key:'Stop when the plank breaks, not before. Full range every rep.',
+            warn:'Partial reps to inflate the count — full range is the exercise.' }},
+      ]},
+  ]
+},
+{
+  title:'Day 2 — Pull', sub:'Vertical Pull · Rope · Bar Progression',
+  tag:'Primary Pull Day — most important session of the week',swim:false,
+  timing:'Warm-up 5min · C1 ~9min · Setup 1min · C2 ~9min · Setup 1min · C3 ~10min · Total ~37min',
+  clusters:[
+    { name:'Cluster 1 — Rope + Horizontal Pull', note:'Rope set up. BB loaded for rows.',
+      exercises:[
+        { l:'A', name:'Climbing Rope Pull (seated)', sets:'3 × max',
+          coaching:'Seated on floor, pull hand-over-hand. 3-second controlled lower back down. Most directly functional pulling exercise in the plan.',
+          guide:{ setup:'Sit under the rope. Grip rope both hands, one above other.',
+            steps:['Pull hand-over-hand upward — right grips higher, pull, left grips higher, pull.','Keep core engaged — don\'t let hips sag.','Go as high as rope and ceiling allow.','Lower back down 3-second controlled descent — hand-over-hand. Don\'t drop.'],
+            key:'The controlled descent builds as much strength as the pull. This closely mirrors lifting another person.',
+            warn:'Using only the arms — drive from the lats (pull elbows to hips), not just the hands.' }},
+        { l:'B', name:'Barbell Bent-Over Row', sets:'3 × 8',
+          coaching:'Hip hinge at 45° — hold throughout. Pull bar to lower chest, elbows back. 3-second lower. Feel lats stretch at bottom.',
+          guide:{ setup:'Hip hinge to roughly 45° from horizontal. Soft knee bend. Overhand grip slightly wider than shoulders.',
+            steps:['Hold the hinge throughout — don\'t stand up to row.','Pull bar to lower chest. Drive elbows back and up.','Squeeze the back at the top.','3-second controlled lower — feel the lats stretch.'],
+            key:'The hip hinge must be held throughout. If you stand up to row, the weight is too heavy.',
+            warn:'Pulling to the stomach — aim for lower chest to maximise lat engagement.' }},
+        { l:'C', name:'Dead Hang', sets:'3 × 30–45s',
+          coaching:'Full hang, arms completely straight, passive. Track your time. Add seconds each week. Foundation for pull-up control.',
+          guide:{ setup:'Overhand grip slightly wider than shoulder-width. Let body hang completely — arms fully straight.',
+            steps:['Allow shoulders to rise slightly toward ears — fully passive hang.','Breathe normally. Focus on grip.','Hold for target time. Build week on week.','Dismount with control.'],
+            key:'Track your hang time and add seconds each week. Target: 45 seconds consistently.',
+            warn:'Engaging shoulders or pulling during the hang — this should be completely passive, arms dead straight.' }},
+      ]},
+    { name:'Cluster 2 — Vertical Pull Progression', note:'Band on bar. DBs set for rear delt work.',
+      exercises:[
+        { l:'A', name:'Band-Assisted Pull-Ups', sets:'3 × 5–8',
+          coaching:'Loop band over bar, foot or knee in loop. Full range — dead hang to chin over bar. Record reps every session. Add reps weekly, then lighter band.',
+          guide:{ setup:'Band looped over bar. Step or kneel into loop. Overhand grip. Drop to dead hang.',
+            steps:['Initiate by depressing shoulder blades (lat first — same as scapular pull-up).','Continue pulling until chin clears the bar.','Hold 1 second at the top.','Lower with full control to dead hang.'],
+            key:'Band assists most at the bottom where you\'re weakest. At 8 consistent reps, move to a lighter band.',
+            warn:'Kipping — using a swing to get over the bar. Controlled only. You\'re building strength.' }},
+        { l:'B', name:'Scapular Pull-Ups', sets:'3 × 10',
+          coaching:'Dead hang, then pull shoulder blades DOWN and together WITHOUT bending elbows. Body rises ~5cm. The step most people skip.',
+          guide:{ setup:'Dead hang from bar, arms fully straight.',
+            steps:['Without bending elbows at all, pull shoulder blades down and together.','Body rises slightly — 3–5cm. That is the full range.','Hold 1 second at top.','Release back to passive hang. Repeat.'],
+            key:'This teaches the lats to initiate the pull before the arms engage. This is why pull-ups stall without it.',
+            warn:'Any elbow bend — elbows stay completely locked throughout. Any bend means you\'ve stopped doing this movement.' }},
+        { l:'C', name:'DB Rear Delt Flyes', sets:'3 × 12',
+          coaching:'Bent over 45°. Wide arc to shoulder height. Squeeze rear delts. Light weight — you should feel the rear delt working.',
+          guide:{ setup:'Hinge forward to 45°. DBs hanging, palms facing each other. Slight elbow bend — maintain throughout.',
+            steps:['Raise both arms wide in an arc — opening wings.','Lead with elbows. Raise to parallel with floor.','Squeeze the rear deltoids at the top.','Lower 2–3 seconds.'],
+            key:'Targets the posterior deltoid — critical for shoulder health and absorbing falls.',
+            warn:'Raising too high above parallel — takes load off rear delt and onto the traps.' }},
+      ]},
+    { name:'Cluster 3 — Australian Pull-Ups + Biceps', note:'Bar and DBs. No setup changes.',
+      exercises:[
+        { l:'A', name:'Australian Pull-Ups', sets:'3 × max',
+          coaching:'Under bar in rack (hip height), body straight plank, heels on floor. Pull chest to bar. 3-second lower. Chase reps.',
+          guide:{ setup:'Barbell in rack at hip height. Lie underneath, overhand grip, body in straight plank, heels on floor.',
+            steps:['Pull chest up to bar — drive elbows back and down.','Body stays in straight plank — don\'t let hips sag.','Touch or nearly touch bar with chest.','3-second controlled lower to start.'],
+            key:'To progress: raise feet onto a bench to make body more horizontal. Start feet on floor, progress by raising them.',
+            warn:'Pulling with bent wrists — keep wrists straight and drive from the elbows.' }},
+        { l:'B', name:'Single-Arm DB Row', sets:'3 × 10 each',
+          coaching:'Knee and same-side hand on bench. Drive ELBOW back and up (not the hand). Full range: DB to hip height. 3-second lower.',
+          guide:{ setup:'One knee and same-side hand on bench. Back flat and parallel to floor. DB in free hand, arm hanging straight.',
+            steps:['Pull DB toward your hip — drive the ELBOW back and up.','Think: put your elbow in your back pocket.','Full range: DB to hip height, shoulder fully retracted.','3-second descent. Full arm extension at bottom.'],
+            key:'The movement is driven by the back, not the arm. Elbow tracks close to the body.',
+            warn:'Rotating the torso to get the DB higher — shoulders stay level throughout.' }},
+        { l:'C', name:'DB Hammer Curls', sets:'3 × 12',
+          coaching:'Neutral grip (palms facing each other). Elbows pinned to sides. Targets brachialis for arm thickness and grip endurance for rope work.',
+          guide:{ setup:'Stand upright. DBs at sides, palms facing body. Elbows tucked to sides.',
+            steps:['Curl both DBs upward keeping neutral grip.','Full range — DBs to shoulder height.','Lower 2–3 seconds.','Alternate arms or together — both work.'],
+            key:'Neutral grip builds brachialis and forearm thickness — directly useful for rope and bar work.',
+            warn:'Swinging elbows forward to get the weight up — keep them pinned to the sides.' }},
+      ]},
+  ]
+},
+{
+  title:'Day 3 — Legs & Core', sub:'Lower Body · Rotational Power · Anti-Rotation',
+  tag:'Functional Strength + Impact Resilience', swim:true,
+  timing:'Warm-up 5min · C1 ~9min · Setup 1–2min · C2 ~9min · Setup 1min · C3 ~8min · Total ~35min',
+  clusters:[
+    { name:'Cluster 1 — Squat + Anti-Rotation Core', note:'BB in squat rack. Band anchored at chest height.',
+      exercises:[
+        { l:'A', name:'Barbell Back Squat', sets:'3 × 6–8',
+          coaching:'3-second eccentric. Drive through heels, depth to parallel or below. The slow lower builds joint resilience for landings.',
+          guide:{ setup:'Bar across upper traps. Feet shoulder-width, toes out 15–30°. Brace core hard before unracking.',
+            steps:['Unrack. Two steps back. Set stance.','Push knees out in direction of toes while sitting hips back and down.','3-second lower to parallel or below.','Drive through whole foot. Push the floor away.','Stand to full hip extension — no half-reps.'],
+            key:'The 3-second lower builds the joint resilience that protects you on landings.',
+            warn:'Knees caving inward on the drive up — actively push them out throughout.' }},
+        { l:'B', name:'Band Pallof Press', sets:'3 × 10 each side',
+          coaching:'Anchor band at chest height. Stand side-on. Press out and hold 2 seconds. Core resists the band rotating you. Switch sides each set.',
+          guide:{ setup:'Band at chest height around rack. Stand side-on. Hold band with both hands at chest. Step out until band has real tension.',
+            steps:['Brace core hard — the band pulls you toward the anchor.','Press both hands straight out until arms extended.','Hold 2 full seconds — resist the band rotating you.','Pull back to chest. Complete all reps, then face the other direction.'],
+            key:'Anti-rotation work — core resists the band pulling you sideways. Mirrors absorbing a lateral hit.',
+            warn:'Hips rotating toward the anchor — pelvis stays square throughout.' }},
+        { l:'C', name:'BW Glute Bridge', sets:'3 × 15',
+          coaching:'Feet hip-width, knees bent. Drive hips to ceiling, hard glute squeeze 1–2 seconds at top. Glute activation while quads recover.',
+          guide:{ setup:'Lie on back, knees bent, feet flat on floor hip-width apart, ~30cm from hips.',
+            steps:['Drive through both heels — push hips toward ceiling.','Squeeze glutes hard at top. Full hip extension.','Hold 1–2 seconds.','Lower with control. Keep tension — don\'t drop to floor between reps.'],
+            key:'The squeeze at top is what activates the glutes. Feeling only hamstrings? Bring feet slightly closer.',
+            warn:'Arching the lower back to push hips higher — drive from the glutes, not the spine.' }},
+      ]},
+    { name:'Cluster 2 — Hinge + Rotational Power', note:'BB re-loaded for RDL. One DB for woodchops.',
+      exercises:[
+        { l:'A', name:'Romanian Deadlift', sets:'3 × 8',
+          coaching:'Hip hinge only — push hips back as bar slides down front of legs. Soft knee throughout. 3-second lower until strong hamstring stretch.',
+          guide:{ setup:'Stand holding bar at hip height. Overhand grip. Feet hip-width. Soft knee — maintain same angle throughout.',
+            steps:['Push hips BACKWARD as bar lowers down front of legs.','Bar stays close to body.','3-second lower until strong hamstring stretch (usually just below the knee).','Drive hips forward to stand. Squeeze glutes at top.'],
+            key:'Hip hinge, not a squat. The knees barely move — all movement is hips pushing back.',
+            warn:'Knees bending more as you lower — if they\'re bending, you\'ve turned it into a squat.' }},
+        { l:'B', name:'DB Woodchop (high to low)', sets:'3 × 10 each',
+          coaching:'ONE DIRECTION only — high (above shoulder) to low (opposite hip). Do NOT reverse back through the arc. Reset at top and repeat.',
+          guide:{ setup:'One DB both hands. Feet shoulder-width. ONE direction only — do not reverse within the rep.',
+            steps:['Start with DB high above one shoulder, arms extended.','Rotate from torso — hips AND shoulders together — DB down and across to opposite hip.','Arms stay relatively straight — this is rotation, not a swing.','Reset at top (lift via most direct path, not woodchop path). Repeat.','All reps one side, then switch.'],
+            key:'Power from rotating hips and torso together — like a baseball swing. NOT reversed back within a rep.',
+            warn:'Only moving the arms — if the torso isn\'t rotating, the core isn\'t working.' }},
+        { l:'C', name:'DB Walking Lunges', sets:'3 × 10 each',
+          coaching:'Large step forward. Back knee to 2–3cm from floor. Drive through front heel. Torso upright throughout.',
+          guide:{ setup:'Stand tall, DBs in each hand. Take a genuinely large step forward.',
+            steps:['As front foot lands, lower back knee toward floor — controlled.','Front shin stays vertical. Knee tracks over toes.','Lower until back knee is 2–3cm from floor.','Drive through front heel to stand, stepping into next lunge.','Alternate legs as you walk.'],
+            key:'Step length is critical — too short and you lose glute and hamstring work. Big steps.',
+            warn:'Torso pitching forward — stay upright throughout. If leaning, step longer or reduce weight.' }},
+      ]},
+    { name:'Cluster 3 — Single-Leg & Core Finisher', note:'DBs only. No barbell.',
+      exercises:[
+        { l:'A', name:'DB Split Squat', sets:'3 × 10 each',
+          coaching:'Fixed stance lunge — feet stay still. 3-second lower until back knee just above floor. Front shin vertical. Complete all reps one leg, then switch.',
+          guide:{ setup:'Long lunge stance, feet fixed. DBs in each hand. Back foot flat or elevated on bench (harder).',
+            steps:['Lower back knee toward floor with 3-second count.','Front shin stays vertical — knee doesn\'t drift past toes.','Lower until back knee just above floor.','Drive through front heel to start. All reps one leg, then switch.'],
+            key:'Unlike a walking lunge, feet stay fixed. Elevating the back foot dramatically increases the challenge.',
+            warn:'Front knee caving inward — drive it outward over the little toe throughout.' }},
+        { l:'B', name:'Single-Arm Farmer\'s Carry', sets:'3 × 20m each',
+          coaching:'Heavy DB one hand. Stay completely upright — resist the weight pulling you sideways. Shoulder pulled down. Switch arms each set.',
+          guide:{ setup:'One heavy DB at side. Stand tall. Shoulder blades back and down.',
+            steps:['Walk 20 metres maintaining completely upright posture.','Don\'t lean away from or toward the weight.','Shoulder of loaded arm pulled DOWN — don\'t let it shrug up.','Switch hands. Repeat.'],
+            key:'The heavier you go, the more core demand. Anti-rotation and grip endurance in one movement.',
+            warn:'Leaning away from the DB to counterbalance — stay perfectly upright. Leaning defeats the purpose.' }},
+        { l:'C', name:'BW Jump Squat', sets:'3 × 10',
+          coaching:'Quarter-to-half squat, explosive drive upward. Land on balls of feet first, absorb through knees and hips. Practise the landing as deliberately as the jump.',
+          guide:{ setup:'Feet shoulder-width, no weight. Quality over speed.',
+            steps:['Lower into quarter-to-half squat.','Drive explosively upward through whole foot.','At peak, body fully extended.','Land on balls of feet first, then heels. Absorb by bending knees and sitting into hips.'],
+            key:'The landing is as important as the jump. Soft, controlled, absorbed. This trains impact absorption.',
+            warn:'Landing with straight legs — this sends all force to joints. Bend and absorb every time.' }},
+      ]},
+  ]
+},
+{
+  title:'Day 4 — Athletic Power', sub:'Explosive Strength · Rope · Impact Work',
+  tag:'Stunt-Specific Day · No swim — full CNS available', swim:false,
+  timing:'Warm-up 5min · C1 ~9min · Setup 1–2min · C2 ~9min · Setup 1min · C3 ~10min · Total ~37min',
+  clusters:[
+    { name:'Cluster 1 — Explosive Pull + Press', note:'BB moderate weight for hang cleans. Bar for scap work.',
+      exercises:[
+        { l:'A', name:'Barbell Hang Clean', sets:'3 × 5',
+          coaching:'From hip height. Drive hips forward explosively, shrug hard, pull elbows HIGH and WIDE, catch bar on front deltoids in rack position. Power from hips, not arms. Moderate weight — speed > load.',
+          guide:{ setup:'Stand with bar at hip height (hang position), overhand grip just outside shoulder-width. Moderate weight — speed matters more than load.',
+            steps:['Drive hips forward EXPLOSIVELY — like an aggressive hip thrust. This is the power source.','As bar rises, shrug shoulders hard and pull elbows HIGH and WIDE.','Drop under the bar. Catch it across front deltoids in rack position (elbows forward and up).','Stand to full hip extension.','Lower back to hang with control. Repeat.'],
+            key:'The hips drive the movement, not the arms. The catch in the rack position — elbows forward — is the hardest part.',
+            warn:'Catching with elbows low — the bar crashes onto the wrists. If you can\'t catch in the rack position, reduce weight.' }},
+        { l:'B', name:'Scapular Pull-Ups', sets:'3 × 10',
+          coaching:'Active recovery between cleans. Dead hang, depress and retract shoulder blades without bending elbows. Reinforces lat initiation pattern.',
+          guide:{ setup:'Dead hang, arms fully straight.',
+            steps:['Without bending elbows, pull shoulder blades down and together.','Body rises 3–5cm — that is the full range.','Hold 1 second.','Release back to passive hang.'],
+            key:'Lat initiation without arm bend. This is the first move that makes pull-ups possible.',
+            warn:'Any elbow bend — elbows stay locked throughout.' }},
+        { l:'C', name:'Barbell Push Press', sets:'3 × 8',
+          coaching:'Bar in front rack. Small fast dip (5–10cm), drive legs explosively, press bar overhead. Lock out. 3-second controlled lower back to rack.',
+          guide:{ setup:'Bar in front rack on front deltoids, elbows forward and high. Feet hip-width.',
+            steps:['Small fast dip — about 5–10cm, no more.','Reverse the dip explosively, driving through the legs.','As legs extend, press the bar overhead — leg drive initiates.','Lock out fully overhead.','3-second controlled lower to rack position.'],
+            key:'The leg drive is the point — this is explosive, not a slow grind. Keep the dip small and fast.',
+            warn:'Dipping too deep — a large dip turns it into a push jerk (different, more technical movement).' }},
+      ]},
+    { name:'Cluster 2 — Rope Power + Movement', note:'Rope and DBs. No barbell.',
+      exercises:[
+        { l:'A', name:'Rope Pull (explosive)', sets:'3 × max',
+          coaching:'Pull as fast as possible — maximum speed today. Power movement. Controlled lower.',
+          guide:{ setup:'Same setup as Day 2 seated pull. Today the intent is different — pull as fast as possible.',
+            steps:['Pull hand-over-hand at maximum speed.','Chase height — if rope allows, go as high as possible.','Controlled lower back down.','Focus on explosive lat and bicep engagement.'],
+            key:'Today the rope is a power movement, not a strength one. Speed of pull is the training stimulus.',
+            warn:'Dropping from height — always lower with control.' }},
+        { l:'B', name:'Bear Crawl', sets:'3 × 10m fwd+back',
+          coaching:'Hands and feet, knees hovering 5cm off floor. Opposite hand + foot move together. 10m forward then 10m backward. Backward is harder. Hips stay level throughout.',
+          guide:{ setup:'On hands and feet. Knees bent at ~90°, hovering 5cm off the floor — they stay off throughout. Hands shoulder-width, feet hip-width.',
+            steps:['Move right hand and left foot forward simultaneously.','Then left hand and right foot forward. One full cycle.','Crawl 10m forward.','Reverse — crawl 10m backward. The backward direction is harder and more useful.'],
+            key:'Anti-rotation demand: core resists rotation and maintains tension with every alternating limb. Movement skill close to the floor — directly useful for stunt work.',
+            warn:'Hips rising or swaying as you move — keep them low and level. Slow down if you can\'t maintain the hover.' }},
+        { l:'C', name:'DB Farmer\'s Carry (both)', sets:'3 × 20m',
+          coaching:'Heavy DBs both hands. Completely upright. Grip, core, shoulder stability. Go heavier than feels comfortable.',
+          guide:{ setup:'Heavy DB in each hand. Stand tall. Shoulder blades back and down.',
+            steps:['Walk 20 metres at a deliberate pace.','Keep torso completely upright — no forward or side lean.','Shoulders down, grip firm.','Breathe naturally — challenge should come from grip and core.'],
+            key:'Go heavier than you think you need to. This carries directly into rope work and controlling another performer.',
+            warn:'Shoulders creeping up toward ears — actively pull them down throughout.' }},
+      ]},
+    { name:'Cluster 3 — Impact & Conditioning', note:'Bag, bodyweight and one DB.',
+      exercises:[
+        { l:'A', name:'Punch Bag — Impact Work', sets:'3 × 2 min',
+          coaching:'Not a cardio round. Practise RECEIVING — lean into the bag as it swings back. Absorb contact with torso and arms. Stay composed. Body shots and hip rotation.',
+          guide:{ setup:'Same guard as Day 1. Different intent — practise receiving force, not just delivering.',
+            steps:['Work combinations but occasionally lean INTO the bag as it swings back.','Let bag make contact with torso and arms — absorb it, stay composed.','Practise hip rotation through strikes.','Move around the bag between combinations.','45s rest between rounds.'],
+            key:'Receiving force, staying composed, recovering fast — builds the reflex that keeps you safe on set.',
+            warn:'Tensing up entirely when bag swings back — stay composed. Tight at contact, relaxed after.' }},
+        { l:'B', name:'Ground-Up Recovery', sets:'3 × 5',
+          coaching:'Controlled fall to floor — vary the direction each rep. Get back to standing as efficiently as possible, different method each rep. 5 reps = 5 different patterns.',
+          guide:{ setup:'No equipment. Start standing. Vary the pattern every rep — no single correct method.',
+            steps:['Fall to floor in a controlled manner — forward, sideways, or backward.','Get back to standing efficiently. Vary the method each rep:','Rep 1: roll and press-up push.','Rep 2: roll to side, get knee under, stand.','Rep 3: roll forward, squat through, stand.','Brief rest between reps.'],
+            key:'Movement skill, not fitness. Explore how your body finds stable position from chaotic positions fast.',
+            warn:'Being overly cautious and slow — commit to the fall and the recovery. Hesitant movement is more injury-prone.' }},
+        { l:'C', name:'DB Woodchop (low to high)', sets:'3 × 10 each',
+          coaching:'Complementary to Day 3 — one direction only, low (outside one hip) to high (above opposite shoulder). Power from hip and torso rotation. NOT reversed within a rep.',
+          guide:{ setup:'One DB both hands. One direction only — low to high. Not reversed within the rep.',
+            steps:['Start with DB at outside of one hip, arms extended.','Rotate torso — hips and shoulders together — DB up and across to above opposite shoulder.','Arms stay extended — drive comes from the rotation.','Reset at low position via direct path. Repeat.','All reps one side, then switch.'],
+            key:'The upward diagonal drive — the throw, the push-off. Together with Day 3\'s version, trains full rotational power both directions.',
+            warn:'Bending elbows to lift the DB — keep arms straight and drive from the torso rotation.' }},
+      ]},
+  ]
+},
+{
+  title:'Day 5 — Upper Strength', sub:'Heavy Push & Pull · Pull-Up Progression',
+  tag:'Strength Consolidation', swim:true,
+  timing:'Warm-up 5min · C1 ~9min · Setup 1–2min · C2 ~9min · Setup 1min · C3 ~10min · Total ~37min',
+  clusters:[
+    { name:'Cluster 1 — Overhead Strength + Pull Progression', note:'BB1 for OHP. Band on bar for assisted pull-ups.',
+      exercises:[
+        { l:'A', name:'Barbell Overhead Press', sets:'3 × 6',
+          coaching:'3-second eccentric. Front rack. Press straight up, head back to let bar pass, then push through. Finish with bar ABOVE EARS — not in front of head. Core braced throughout.',
+          guide:{ setup:'Bar in front rack on front deltoids, elbows forward and high. Grip just outside shoulder-width. Feet hip-width.',
+            steps:['Press bar straight up, move head slightly back to let it pass.','Once bar passes head, push head forward and through.','Finish with bar directly above ears — not in front.','Lock out completely.','3-second controlled lower to rack position.'],
+            key:'Finish position: bar over ears, not in front. Bar out in front = shoulder compromised under load.',
+            warn:'Excessive lower back arch — brace harder or reduce load. This should be a strict vertical press.' }},
+        { l:'B', name:'Band-Assisted Pull-Ups', sets:'3 × 5–8',
+          coaching:'Match or beat your Day 2 reps. Full range. These and Day 2 sets are the two most important pull-up blocks of the week.',
+          guide:{ setup:'Band looped over bar. Step or kneel into loop. Dead hang.',
+            steps:['Initiate by depressing shoulder blades.','Pull until chin clears bar.','Hold 1 second at top.','Controlled lower to dead hang.'],
+            key:'Match or beat Day 2 rep count. Record every session. Progress is the point.',
+            warn:'Kipping — controlled only.' }},
+        { l:'C', name:'DB Lateral Raises', sets:'3 × 15',
+          coaching:'Same as Day 1 — directly sideways, T-shape. Active recovery between heavy lifts.',
+          guide:{ setup:'Stand upright, DBs at sides, palms inward.',
+            steps:['Raise directly sideways — T-shape.','Shoulder height only.','2–3 second lower.','Repeat.'],
+            key:'Sideways only. If using momentum, reduce weight.',
+            warn:'Shrugging traps — shoulders down.' }},
+      ]},
+    { name:'Cluster 2 — Heavy Push / Pull', note:'BB1 for incline. BB2 pre-loaded for rows. Both barbells in use.',
+      exercises:[
+        { l:'A', name:'Incline BB Press (heavy)', sets:'3 × 6–8',
+          coaching:'Same 30–35° and technique as Day 1 but heavier. 75–80% of max — last 2 reps should require genuine effort. 3-second eccentric — don\'t abandon it.',
+          guide:{ setup:'Bench at 30–35°. \'Heavy\' = ~75–80% of your max. Test: last 2 reps should be genuinely hard.',
+            steps:['Same technique as Day 1 — 3-second eccentric, bar to upper chest, drive hard.','Use ~5–10% more than your Day 1 incline weight as a starting point.','If last set felt easy, add weight next session.','If you can\'t complete reps with 3-second lower, reduce weight.'],
+            key:'\'Heavy\' is personal. The only test: are the last 2 reps genuinely hard? Not impossible — hard.',
+            warn:'Sacrificing the 3-second lower for heavier weight. A lighter weight done right beats a heavier weight done badly.' }},
+        { l:'B', name:'Barbell Bent-Over Row (heavy)', sets:'3 × 6–8',
+          coaching:'BB2 pre-loaded heavier than Day 2. Same technique. Hip hinge held throughout. Last 2 reps should be hard. If torso rises more than 15°, reduce weight.',
+          guide:{ setup:'BB2 at ~75–80% of max. Same setup as Day 2.',
+            steps:['Same technique as Day 2 — hip hinge held, pull to lower chest, 3-second lower.','Use ~5–10% more than your Day 2 row weight.','At heavier loads, resist the urge to stand up.','If torso rises more than 15°, reduce weight.'],
+            key:'Holding the hip hinge under heavier load is the challenge and the adaptation.',
+            warn:'Jerking bar up with momentum — controlled pull at all weights. Momentum removes the lat.' }},
+        { l:'C', name:'Australian Pull-Ups', sets:'3 × max',
+          coaching:'3-second lowering phase. Between two heavy barbell movements. Chase reps.',
+          guide:{ setup:'Bar at hip height in rack. Hang below, body in straight plank.',
+            steps:['Pull chest to bar — elbows back and down.','Body stays in straight plank.','3-second lower.','Chase reps.'],
+            key:'Pull-up progression volume between heavy barbell movements.',
+            warn:'Hips sagging — maintain the plank.' }},
+      ]},
+    { name:'Cluster 3 — Conditioning Finisher', note:'No kit changes. Bag + bodyweight only.',
+      exercises:[
+        { l:'A', name:'Punch Bag', sets:'3 × 2 min',
+          coaching:'Same structure as Day 1: Rd 1 jab-cross, Rd 2 body shots and hooks, Rd 3 freestyle. Everything left in the tank.',
+          guide:{ setup:'Same as Day 1. Hands up, elbows in, balls of feet.',
+            steps:['Round 1: jab-cross combinations.','Round 2: hooks and body shots.','Round 3: freestyle.','45s rest between rounds.'],
+            key:'End of week. Shoulder endurance. Full extension on every punch.',
+            warn:'Tense shoulders — stay loose between strikes.' }},
+        { l:'B', name:'Press-Ups (burn-out)', sets:'3 × max',
+          coaching:'Between bag rounds. Reps to failure. 3-second lower. Final chest and tricep work of the week.',
+          guide:{ setup:'Standard press-up. Core tight, body in straight line.',
+            steps:['3-second lower.','Chest to floor.','Drive to full extension.','Continue to failure.'],
+            key:'Stop when the plank breaks. Full range every rep.',
+            warn:'Partial range — full range is the exercise.' }},
+        { l:'C', name:'BW Squat Jump', sets:'3 × 10',
+          coaching:'Between bag rounds. Quarter squat, explosive drive. Land soft. End the week as athletically as it started.',
+          guide:{ setup:'Feet shoulder-width, no weight. End of week — these will feel harder than Monday.',
+            steps:['Quarter-to-half squat.','Drive explosively upward.','Land balls of feet first, absorb through knees and hips.','Reset between reps — quality over speed.'],
+            key:'Soft, controlled landing. Practise the absorption deliberately even when tired.',
+            warn:'Landing stiff-legged when fatigued — bend and absorb every time.' }},
+      ]},
+  ]
+}
+];
+
+const PULLUP_PROGRESS = [
+  {name:'Dead Hang', sets:'3 × 30–45s', on:'Days 2 & 5', status:'current', note:'Grip and shoulder stability. Build time each week.'},
+  {name:'Scapular Pull-Ups', sets:'3 × 10', on:'Days 2 & 4', status:'current', note:'Lat initiation without arm bend.'},
+  {name:'Australian Pull-Ups', sets:'3 × max', on:'Days 2, 4 & 5', status:'current', note:'Horizontal pull. Chase reps each session.'},
+  {name:'Band-Assisted Pull-Ups', sets:'3 × 5–8', on:'Days 2 & 5', status:'current', note:'Full vertical pull. Add reps weekly.'},
+  {name:'Negative Pull-Ups', sets:'3 × 3–5', on:'Replace band work', status:'next', note:'Jump to top, 4–5 sec lower. Add when band reps hit 8+.'},
+  {name:'Full Pull-Up', sets:'3 × max', on:'The goal', status:'goal', note:'Dead hang to chin over bar. Unassisted.'},
+];
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentDay = 0;
+let openEx = null; // "d_c_e" string
+let timerInterval = null;
+let timerSeconds = 0;
+let timerPreset = 90;
+
+// ═══════════════════════════════════════════════
+// WEIGHT STORAGE
+// ═══════════════════════════════════════════════
+function wKey(d,c,e,wk){ return `w_${d}_${c}_${e}_${wk}`; }
+function getW(d,c,e,wk){ try{ return localStorage.getItem(wKey(d,c,e,wk))||''; }catch(e){ return ''; } }
+function setW(d,c,e,wk,v){ try{ localStorage.setItem(wKey(d,c,e,wk),v); }catch(e){} }
+
+// ═══════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════
+function render(){
+  renderTabs();
+  renderMain();
+}
+
+function renderTabs(){
+  const el = document.getElementById('tabs');
+  el.innerHTML = PLAN.map((day,i)=>`
+    <div class="tab ${i===currentDay?'active':''}" onclick="selectDay(${i})">
+      <span class="tab-label">D${i+1}${day.swim?'<span class=\'swim-pip\'></span>':''}</span>
+      <span class="tab-sub">${day.sub.split('·')[0].trim().split(' ')[0]}</span>
+    </div>`).join('');
+}
+
+function renderMain(){
+  const day = PLAN[currentDay];
+  let html = `
+    <div class="day-head">
+      <div class="day-title">${day.title}</div>
+      <div class="day-sub">${day.sub}</div>
+    </div>
+    <div class="tag-pill">${day.tag}</div>
+    ${day.swim?'<div class="swim-pill"><span>🏊</span> Swim day — active shoulder recovery after this session</div>':''}
+    <div class="timing">${day.timing}</div>
+    <div class="clusters">`;
+
+  day.clusters.forEach((cl,ci)=>{
+    html += `
+      <div class="cluster">
+        <div class="c-head" style="background:${COLORS[ci]}">
+          <div class="c-name">${cl.name}</div>
+          <div class="c-note">${cl.note}</div>
+        </div>
+        <div class="c-cols"><span></span><span>Exercise</span><span>Sets</span><span></span></div>`;
+
+    cl.exercises.forEach((ex,ei)=>{
+      const key = `${currentDay}_${ci}_${ei}`;
+      const isOpen = openEx === key;
+      html += `
+        <div class="ex ${isOpen?'open':''}" onclick="toggleEx('${key}')">
+          <div class="ex-label" style="background:${COLORS[ci]}">${ex.l}</div>
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-sets">${ex.sets}</div>
+          <div class="chevron">›</div>
+        </div>
+        <div class="ex-detail ${isOpen?'open':''}">
+          <div class="ex-detail-inner">
+            <div class="coaching">${ex.coaching}</div>
+            <div class="weight-row">
+              ${[1,2,3,4].map(wk=>`
+                <div class="w-field">
+                  <label>Week ${wk}</label>
+                  <input type="text" inputmode="text" placeholder="e.g. 60kg"
+                    value="${getW(currentDay,ci,ei,wk)}"
+                    onchange="setW(${currentDay},${ci},${ei},${wk},this.value)"
+                    onclick="event.stopPropagation()">
+                </div>`).join('')}
+            </div>
+            <div class="ex-btns">
+              <button class="btn-guide" onclick="event.stopPropagation();openGuide(${currentDay},${ci},${ei})">📖 Exercise Guide</button>
+              <button class="btn-timer" onclick="event.stopPropagation();startTimer()">⏱ Rest</button>
+            </div>
+          </div>
+        </div>`;
+    });
+    html += `</div>`;
+  });
+
+  // Pull-up progress on Day 2
+  if(currentDay === 1){
+    html += renderPullProgress();
+  }
+
+  html += `</div><div class="bottom-pad"></div>`;
+  document.getElementById('main').innerHTML = html;
+}
+
+function renderPullProgress(){
+  return `
+    <div class="progress-bar-wrap">
+      <div class="progress-head">
+        <span class="progress-title">PULL-UP PROGRESSION</span>
+        <span class="progress-sub">Your path to full pull-ups</span>
+      </div>
+      ${PULLUP_PROGRESS.map(p=>`
+        <div class="progress-row">
+          <div>
+            <div class="p-name">${p.name}</div>
+            <div style="font-size:11px;color:#3b4d6a;margin-top:2px">${p.note}</div>
+          </div>
+          <div class="p-where">${p.sets}</div>
+          <div class="p-status status-${p.status}">${
+            p.status==='current'?'● Current':
+            p.status==='next'?'◉ Next step':
+            '★ Goal'
+          }</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════
+function selectDay(i){
+  currentDay = i;
+  openEx = null;
+  render();
+  window.scrollTo(0,0);
+}
+
+function toggleEx(key){
+  openEx = openEx === key ? null : key;
+  renderMain();
+  if(openEx){
+    setTimeout(()=>{
+      const [d,c,e] = key.split('_').map(Number);
+      const els = document.querySelectorAll('.ex');
+      let count = 0;
+      for(let ci=0;ci<c;ci++) count += PLAN[currentDay].clusters[ci].exercises.length;
+      count += e;
+      if(els[count]) els[count].scrollIntoView({behavior:'smooth',block:'start'});
+    },50);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// GUIDE
+// ═══════════════════════════════════════════════
+function openGuide(d,c,e){
+  const ex = PLAN[d].clusters[c].exercises[e];
+  const g = ex.guide;
+  if(!g) return;
+  const el = document.getElementById('guideContent');
+  el.innerHTML = `
+    <div class="drawer-handle"></div>
+    <div class="drawer-title">${ex.name}</div>
+    ${g.setup?`<div class="g-section"><div class="g-label">Setup</div><div class="g-text">${g.setup}</div></div>`:''}
+    ${g.steps?`<div class="g-section"><div class="g-label">Steps</div>${g.steps.map((s,i)=>`<div class="g-step" data-n="${i+1}">${s}</div>`).join('')}</div>`:''}
+    ${g.key?`<div class="g-section"><div class="g-label">Key Point</div><div class="g-key">${g.key}</div></div>`:''}
+    ${g.warn?`<div class="g-section"><div class="g-label">Watch Out</div><div class="g-warn">${g.warn}</div></div>`:''}`;
+  document.getElementById('guideOverlay').classList.add('show');
+}
+
+function closeGuide(){
+  document.getElementById('guideOverlay').classList.remove('show');
+}
+
+document.getElementById('guideOverlay').addEventListener('click',function(e){
+  if(e.target === this) closeGuide();
+});
+
+// ═══════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════
+function setPreset(s){
+  timerPreset = s;
+  document.querySelectorAll('.timer-p').forEach(el=>{
+    el.classList.toggle('sel', parseInt(el.textContent) === s);
+  });
+  if(timerInterval){
+    clearInterval(timerInterval);
+    timerSeconds = s;
+    updateTimerDisplay();
+    startCountdown();
+  }
+}
+
+function startTimer(){
+  timerSeconds = timerPreset;
+  updateTimerDisplay();
+  document.getElementById('timerOv').classList.add('show');
+  if(timerInterval) clearInterval(timerInterval);
+  startCountdown();
+}
+
+function startCountdown(){
+  timerInterval = setInterval(()=>{
+    timerSeconds--;
+    if(timerSeconds <= 0){
+      clearInterval(timerInterval);
+      timerInterval = null;
+      timerSeconds = 0;
+      updateTimerDisplay();
+      if(navigator.vibrate) navigator.vibrate([200,100,200]);
+      setTimeout(closeTimer, 800);
+    } else {
+      updateTimerDisplay();
+    }
+  },1000);
+}
+
+function updateTimerDisplay(){
+  const el = document.getElementById('timerNum');
+  const m = Math.floor(timerSeconds/60);
+  const s = timerSeconds%60;
+  el.textContent = timerSeconds >= 60 ? `${m}:${String(s).padStart(2,'0')}` : timerSeconds;
+  el.style.color = timerSeconds <= 10 ? '#f87171' : timerSeconds <= 20 ? '#fb923c' : '#4ade80';
+}
+
+function closeTimer(){
+  clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('timerOv').classList.remove('show');
+}
+
+document.getElementById('timerOv').addEventListener('click',function(e){
+  if(e.target === this) closeTimer();
+});
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+render();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(r => console.log('SW registered'))
+      .catch(e => console.log('SW error', e));
+  });
+}
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-const CACHE = 'gym-plan-v2';
+const CACHE = 'gym-plan-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
